@@ -2,16 +2,18 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { useTenant } from '../../layout'
 
 export default function NuevoClienteAdminPage() {
   const router = useRouter()
   const [cobradores, setCobradores] = useState<any[]>([])
   const [form, setForm] = useState({ nombre: '', cedula: '', celular: '', direccion: '', colaborador_id: '' })
+  const tenantId = useTenant()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api.getColaboradores().then(data => {
+    api.getColaboradores(tenantId).then(data => {
       const activos = data.filter((c: any) => c.activo !== false)
       setCobradores(activos)
     })
@@ -22,7 +24,7 @@ export default function NuevoClienteAdminPage() {
     if (!form.colaborador_id) { setError('Selecciona un cobrador'); return }
     setSaving(true)
     setError('')
-    const res = await api.createCliente(form)
+    const res = await api.createCliente(form, tenantId)
     if (res?.statusCode >= 400) {
       setError(res?.message || 'Error al crear el cliente')
       setSaving(false)

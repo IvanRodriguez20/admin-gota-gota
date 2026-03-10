@@ -9,20 +9,25 @@ export function createClient() {
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://backend-gota-gota-final-production.up.railway.app'
 
+// Todas las peticiones admin llevan x-tenant-id
+function headers(tenantId?: string) {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (tenantId) h['x-tenant-id'] = tenantId
+  return h
+}
+
 export const api = {
-  // Stats
-  async getStats() {
+  async getStats(tenantId?: string) {
     const [cols, clientes, creditos] = await Promise.all([
-      fetch(`${API}/colaboradores`).then(r => r.json()),
-      fetch(`${API}/clientes`).then(r => r.json()),
-      fetch(`${API}/creditos`).then(r => r.json()),
+      fetch(`${API}/colaboradores`, { headers: headers(tenantId) }).then(r => r.json()),
+      fetch(`${API}/clientes`, { headers: headers(tenantId) }).then(r => r.json()),
+      fetch(`${API}/creditos`, { headers: headers(tenantId) }).then(r => r.json()),
     ])
     return { colaboradores: cols, clientes, creditos }
   },
 
-  // Colaboradores
-  async getColaboradores() {
-    return fetch(`${API}/colaboradores`).then(r => r.json())
+  async getColaboradores(tenantId?: string) {
+    return fetch(`${API}/colaboradores`, { headers: headers(tenantId) }).then(r => r.json())
   },
   async createColaborador(data: any) {
     return fetch(`${API}/colaboradores`, {
@@ -37,28 +42,17 @@ export const api = {
     }).then(r => r.json())
   },
 
-  // Clientes
-  async getClientes() {
-    return fetch(`${API}/clientes`).then(r => r.json())
+  async getClientes(tenantId?: string) {
+    return fetch(`${API}/clientes`, { headers: headers(tenantId) }).then(r => r.json())
   },
-  async getClientesByColaborador(id: string) {
-    return fetch(`${API}/clientes/colaborador/${id}`).then(r => r.json())
-  },
-  async createCliente(data: any) {
+  async createCliente(data: any, tenantId?: string) {
     return fetch(`${API}/clientes`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      method: 'POST', headers: headers(tenantId),
+      body: JSON.stringify({ ...data, tenant_id: tenantId }),
     }).then(r => r.json())
   },
 
-  // Creditos
-  async getCreditos() {
-    return fetch(`${API}/creditos`).then(r => r.json())
-  },
-  async getCreditosByCliente(id: string) {
-    return fetch(`${API}/creditos/cliente/${id}`).then(r => r.json())
-  },
-  async getCreditosByColaborador(id: string) {
-    return fetch(`${API}/creditos/colaborador/${id}`).then(r => r.json())
+  async getCreditos(tenantId?: string) {
+    return fetch(`${API}/creditos`, { headers: headers(tenantId) }).then(r => r.json())
   },
 }

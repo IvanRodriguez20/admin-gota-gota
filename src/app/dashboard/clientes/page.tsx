@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { useTenant } from '../layout'
 
 export default function ClientesAdminPage() {
   const router = useRouter()
@@ -12,11 +13,12 @@ export default function ClientesAdminPage() {
   const [filtroCobrador, setFiltroCobrador] = useState('todos')
   const [loading, setLoading] = useState(true)
 
+  const tenantId = useTenant()
   useEffect(() => {
-    Promise.all([api.getClientes(), api.getColaboradores()]).then(([c, cols]) => {
+    Promise.all([api.getClientes(tenantId), api.getColaboradores(tenantId)]).then(([c, cols]) => {
       setClientes(c); setCobradores(cols); setFiltered(c); setLoading(false)
     })
-  }, [])
+  }, [tenantId])
 
   useEffect(() => {
     let result = clientes

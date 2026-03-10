@@ -2,10 +2,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient, api } from '@/lib/api'
+import { useTenant } from '../../layout'
 
 export default function NuevoCobradorPage() {
   const router = useRouter()
   const [form, setForm] = useState({ nombre: '', cedula: '', celular: '', email: '', password: '' })
+  const tenantId = useTenant()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -27,6 +29,7 @@ export default function NuevoCobradorPage() {
       // 2. Crear colaborador en backend
       const colaborador = await api.createColaborador({
         nombre: form.nombre, cedula: form.cedula, celular: form.celular,
+        tenant_id: tenantId,
       })
 
       // 3. Vincular user_id

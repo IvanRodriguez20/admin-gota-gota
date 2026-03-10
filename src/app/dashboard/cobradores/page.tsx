@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { useTenant } from '../layout'
 
 export default function CobradoresPage() {
   const router = useRouter()
@@ -10,9 +11,10 @@ export default function CobradoresPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)
+  const tenantId = useTenant()
 
   const load = async () => {
-    const data = await api.getColaboradores()
+    const data = await api.getColaboradores(tenantId)
     setCobradores(data)
     setFiltered(data)
     setLoading(false)

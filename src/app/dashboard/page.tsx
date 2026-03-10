@@ -1,14 +1,16 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { useTenant } from './layout'
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+  const tenantId = useTenant()
   useEffect(() => {
-    api.getStats().then(d => { setData(d); setLoading(false) })
-  }, [])
+    api.getStats(tenantId).then(d => { setData(d); setLoading(false) })
+  }, [tenantId])
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">

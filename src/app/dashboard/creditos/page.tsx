@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { useTenant } from '../layout'
 
 export default function CreditosAdminPage() {
   const [creditos, setCreditos] = useState<any[]>([])
@@ -12,11 +13,12 @@ export default function CreditosAdminPage() {
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [loading, setLoading] = useState(true)
 
+  const tenantId = useTenant()
   useEffect(() => {
-    Promise.all([api.getCreditos(), api.getColaboradores(), api.getClientes()]).then(([cr, cols, cl]) => {
+    Promise.all([api.getCreditos(tenantId), api.getColaboradores(tenantId), api.getClientes(tenantId)]).then(([cr, cols, cl]) => {
       setCreditos(cr); setCobradores(cols); setClientes(cl); setFiltered(cr); setLoading(false)
     })
-  }, [])
+  }, [tenantId])
 
   useEffect(() => {
     let result = creditos
