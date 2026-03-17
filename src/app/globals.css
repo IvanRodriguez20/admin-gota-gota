@@ -81,18 +81,5 @@ body {
 }
 .btn-danger:hover { background: rgba(239,68,68,0.2); }
 
-.btn-ghost {
-  background: var(--surface-3);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  font-weight: 500;
-  border-radius: 8px;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-.btn-ghost:hover { color: var(--text); border-color: #3A3A48; }
-
 .badge-pagado { background: rgba(0,229,160,0.1); color: #00E5A0; border: 1px solid rgba(0,229,160,0.2); }
 .badge-pendiente { background: rgba(255,165,0,0.1); color: #FFA500; border: 1px solid rgba(255,165,0,0.2); }
-.badge-activo { background: rgba(0,229,160,0.1); color: #00E5A0; border: 1px solid rgba(0,229,160,0.2); }
-.badge-inactivo { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }

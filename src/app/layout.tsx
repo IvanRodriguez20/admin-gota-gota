@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Admin — Gota Gota',
-  description: 'Panel de administración Gota Gota',
+  title: 'Gota Gota',
+  description: 'Sistema de gestión de créditos',
 }
 
 export const viewport: Viewport = {

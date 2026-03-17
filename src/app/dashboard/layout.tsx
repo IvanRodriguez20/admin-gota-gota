@@ -1,24 +1,15 @@
 'use client'
-import { useEffect, useState, createContext, useContext } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/api'
-
-export const TenantContext = createContext<string | undefined>(undefined)
-export const useTenant = () => useContext(TenantContext)
-
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊', exact: true },
-  { href: '/dashboard/cobradores', label: 'Cobradores', icon: '👥' },
-  { href: '/dashboard/clientes', label: 'Clientes', icon: '👤' },
-  { href: '/dashboard/creditos', label: 'Créditos', icon: '💳' },
-  { href: '/dashboard/admins', label: 'Administradores', icon: '⚡' },
-]
+import { createClient } from '@/lib/supabase'
+import { getColaboradorByUserId } from '@/lib/api'
+import { TenantContext } from '@/lib/tenant-context'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [user, setUser] = useState<any>(null)
+  const [colaborador, setColaborador] = useState<any>(null)
   const [tenantId, setTenantId] = useState<string | undefined>()
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -28,10 +19,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
-      const role = session.user.user_metadata?.role
-      if (role !== 'admin' && role !== 'superadmin') { router.push('/login'); return }
-      setUser(session.user)
-      setTenantId(session.user.user_metadata?.tenant_id)
+      const tid = session.user.user_metadata?.tenant_id
+      setTenantId(tid)
+      const col = await getColaboradorByUserId(session.user.id, tid)
+      setColaborador(col)
       setLoading(false)
     }
     init()
@@ -48,7 +39,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   )
 
-  const isActive = (href: string, exact?: boolean) => exact ? pathname === href : pathname.startsWith(href)
+  const navItems = [
+    { href: '/dashboard/clientes', label: 'Clientes', icon: '👤' },
+    { href: '/dashboard/creditos', label: 'Créditos', icon: '💳' },
+  ]
 
   return (
     <TenantContext.Provider value={tenantId}>
@@ -58,67 +52,63 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3"
           style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--accent), var(--brand))' }}>
-              <span className="text-white text-xs font-bold">⚡</span>
+            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)' }}>
+              <span className="text-black font-bold text-xs">G</span>
             </div>
-            <div>
-              <span className="font-bold text-sm">Gota Gota</span>
-              <span className="text-xs ml-1.5 font-semibold" style={{ color: 'var(--accent)' }}>ADMIN</span>
-            </div>
+            <span className="font-bold text-sm">Gota Gota</span>
           </div>
-          <button onClick={() => setMenuOpen(!menuOpen)}
-            className="w-8 h-8 flex flex-col items-center justify-center gap-1.5 rounded-lg"
-            style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-            <span className="w-4 h-0.5 rounded" style={{ background: menuOpen ? 'var(--brand)' : 'var(--text-muted)' }} />
-            <span className="w-4 h-0.5 rounded" style={{ background: menuOpen ? 'var(--brand)' : 'var(--text-muted)' }} />
-            <span className="w-4 h-0.5 rounded" style={{ background: menuOpen ? 'var(--brand)' : 'var(--text-muted)' }} />
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{colaborador?.nombre?.split(' ')[0]}</span>
+            <button onClick={() => setMenuOpen(!menuOpen)}
+              className="w-8 h-8 flex flex-col items-center justify-center gap-1.5 rounded-lg"
+              style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
+              <span className="w-4 h-0.5 rounded" style={{ background: menuOpen ? 'var(--brand)' : 'var(--text-muted)' }} />
+              <span className="w-4 h-0.5 rounded" style={{ background: menuOpen ? 'var(--brand)' : 'var(--text-muted)' }} />
+              <span className="w-4 h-0.5 rounded" style={{ background: menuOpen ? 'var(--brand)' : 'var(--text-muted)' }} />
+            </button>
+          </div>
         </header>
 
         {menuOpen && (
-          <div className="lg:hidden fixed top-14 left-0 right-0 z-20 p-4 space-y-1.5"
+          <div className="lg:hidden fixed top-14 left-0 right-0 z-20 p-4 space-y-2"
             style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border)' }}>
             {navItems.map(item => (
               <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
                 style={{
-                  background: isActive(item.href, item.exact) ? 'rgba(0,229,160,0.1)' : 'var(--surface-3)',
-                  color: isActive(item.href, item.exact) ? 'var(--brand)' : 'var(--text-muted)',
-                  border: isActive(item.href, item.exact) ? '1px solid rgba(0,229,160,0.2)' : '1px solid var(--border)',
+                  background: pathname.startsWith(item.href) ? 'rgba(0,229,160,0.1)' : 'var(--surface-3)',
+                  color: pathname.startsWith(item.href) ? 'var(--brand)' : 'var(--text-muted)',
+                  border: pathname.startsWith(item.href) ? '1px solid rgba(0,229,160,0.2)' : '1px solid var(--border)',
                 }}>
                 <span>{item.icon}</span>{item.label}
               </Link>
             ))}
-            <button onClick={handleLogout}
-              className="w-full text-left text-sm px-4 py-3 rounded-xl mt-1"
-              style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+            <button onClick={handleLogout} className="w-full text-left text-sm px-4 py-3 rounded-xl"
+              style={{ color: 'var(--text-muted)', background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
               🚪 Cerrar sesión
             </button>
           </div>
         )}
 
         {/* DESKTOP SIDEBAR */}
-        <aside className="hidden lg:flex w-64 flex-col fixed h-full z-10"
+        <aside className="hidden lg:flex w-60 flex-col fixed h-full z-10"
           style={{ background: 'var(--surface-1)', borderRight: '1px solid var(--border)' }}>
           <div className="p-6 border-b" style={{ borderColor: 'var(--border)' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--accent), var(--brand))' }}>
-                <span className="text-white font-bold">⚡</span>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'var(--brand)' }}>
+                <span className="text-black font-bold text-xs">G</span>
               </div>
-              <div>
-                <p className="font-bold leading-none">Gota Gota</p>
-                <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--accent)' }}>ADMIN PANEL</p>
-              </div>
+              <span className="font-bold tracking-tight">Gota Gota</span>
             </div>
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {navItems.map(item => (
               <Link key={item.href} href={item.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style={{
-                  background: isActive(item.href, item.exact) ? 'rgba(0,229,160,0.1)' : 'transparent',
-                  color: isActive(item.href, item.exact) ? 'var(--brand)' : 'var(--text-muted)',
-                  border: isActive(item.href, item.exact) ? '1px solid rgba(0,229,160,0.15)' : '1px solid transparent',
+                  background: pathname.startsWith(item.href) ? 'rgba(0,229,160,0.1)' : 'transparent',
+                  color: pathname.startsWith(item.href) ? 'var(--brand)' : 'var(--text-muted)',
+                  border: pathname.startsWith(item.href) ? '1px solid rgba(0,229,160,0.2)' : '1px solid transparent',
                 }}>
                 <span>{item.icon}</span>{item.label}
               </Link>
@@ -127,23 +117,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="p-4 border-t" style={{ borderColor: 'var(--border)' }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'linear-gradient(135deg, var(--accent), var(--brand))', color: 'white' }}>
-                {user?.email?.charAt(0).toUpperCase()}
+                style={{ background: 'var(--surface-4)', color: 'var(--brand)' }}>
+                {colaborador?.nombre?.charAt(0) || 'U'}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium truncate">{user?.email}</p>
-                <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                  {user?.user_metadata?.role === 'superadmin' ? 'Super Admin' : 'Admin'}
-                </p>
+                <p className="text-xs font-medium truncate">{colaborador?.nombre || 'Usuario'}</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Colaborador</p>
               </div>
             </div>
-            <button onClick={handleLogout} className="btn-danger w-full text-xs py-2 px-3 text-left">
+            <button onClick={handleLogout} className="w-full text-left text-xs px-3 py-2 rounded-lg"
+              style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
               Cerrar sesión
             </button>
           </div>
         </aside>
 
-        <main className="lg:ml-64 pt-16 lg:pt-0 p-4 lg:p-8">
+        <main className="lg:ml-60 pt-16 lg:pt-0 p-4 lg:p-8">
           {children}
         </main>
       </div>
